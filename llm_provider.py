@@ -15,75 +15,74 @@ class LLMProvider(ABC):
     
     @staticmethod
     def get_schema_description() -> str:
-        """Database schema information for LLM"""
-        return """
-MongoDB Collections Schema:
+      return """
+        MongoDB Collections Schema (ALL IDs ARE STRINGS):
 
-1. students:
-   - _id: ObjectId
-   - name: String
-   - email: String
-   - phone: String
-   - class_id: String (references classes._id)
-   - section: String (A, B, C)
-   - roll_number: Integer
-   - enrollment_date: DateTime
+        1. students:
+          - _id: String
+          - name: String
+          - email: String
+          - phone: String
+          - class_id: String (references classes._id)
+          - section: String (A, B, C)
+          - roll_number: Integer
+          - enrollment_date: DateTime
 
-2. teachers:
-   - _id: ObjectId
-   - name: String
-   - email: String
-   - phone: String
-   - designation: String
-   - department: String
-   - qualification: String
-   - hire_date: DateTime
+        2. teachers:
+          - _id: String
+          - name: String
+          - email: String
+          - phone: String
+          - designation: String
+          - department: String
+          - qualification: String
+          - hire_date: DateTime
 
-3. classes:
-   - _id: ObjectId
-   - class_name: String (e.g., "Class 6")
-   - section: String (A, B, C)
-   - teacher_id: String (references teachers._id)
-   - grade: Integer
-   - student_count: Integer
-   - room_number: String
+        3. classes:
+          - _id: String
+          - class_name: String (e.g., "Class 6")
+          - section: String
+          - teacher_id: String (references teachers._id)
+          - grade: Integer
+          - student_count: Integer
+          - room_number: String
 
-4. attendance:
-   - _id: ObjectId
-   - student_id: String (references students._id)
-   - class_id: String (references classes._id)
-   - date: DateTime
-   - status: String (Present, Absent, Leave)
-   - remarks: String (optional)
+        4. attendance:
+          - _id: String
+          - student_id: String (references students._id)
+          - class_id: String (references classes._id)
+          - date: DateTime
+          - status: String (Present, Absent, Leave)
+          - remarks: String (optional)
 
-5. assignments:
-   - _id: ObjectId
-   - title: String
-   - description: String
-   - class_id: String (references classes._id)
-   - teacher_id: String (references teachers._id)
-   - created_date: DateTime
-   - due_date: DateTime
-   - total_marks: Integer
+        5. assignments:
+          - _id: String
+          - title: String
+          - description: String
+          - class_id: String (references classes._id)
+          - teacher_id: String (references teachers._id)
+          - created_date: DateTime
+          - due_date: DateTime
+          - total_marks: Integer
 
-6. submissions:
-   - _id: ObjectId
-   - assignment_id: String (references assignments._id)
-   - student_id: String (references students._id)
-   - submission_date: DateTime
-   - marks_obtained: Integer (optional)
-   - status: String (Submitted, Pending)
+        6. submissions:
+          - _id: String
+          - assignment_id: String (references assignments._id)
+          - student_id: String (references students._id)
+          - submission_date: DateTime
+          - marks_obtained: Integer (optional)
+          - status: String (Submitted, Pending)
 
-7. exams:
-   - _id: ObjectId
-   - exam_name: String
-   - class_id: String (references classes._id)
-   - date: DateTime
-   - time: String (HH:MM format)
-   - duration: Integer (minutes)
-   - total_marks: Integer
-   - subject: String
-"""
+        7. exams:
+          - _id: String
+          - exam_name: String
+          - class_id: String (references classes._id)
+          - date: DateTime
+          - time: String
+          - duration: Integer
+          - total_marks: Integer
+          - subject: String
+        """
     
     @abstractmethod
     def generate_query(self, user_question: str) -> Dict[str, Any]:
@@ -119,165 +118,94 @@ class OpenAIProvider(LLMProvider):
             return {"error": str(e), "query": {}}
     
     def _build_prompt(self, user_question: str) -> str:
-      base_prompt = """You are an expert MongoDB query generator.
+      base_prompt = """
+      You are an expert MongoDB query generator.
 
-      Your task is to convert a natural language question into a MongoDB query using the provided schema.
+      IMPORTANT: All IDs in the database are STRINGS (NOT ObjectId).
 
-          ---
+      ---
 
-          ### 🔥 Rules & Guidelines:
+      ### RULES:
 
-          1. Always return ONLY valid JSON. No explanation outside JSON.
+      1. Always return ONLY valid JSON.
+      2. Use:
+        - "query" → simple queries
+        - "pipeline" → joins, aggregation, grouping
 
-          2. Choose:
-          - "query" → for simple find operations
-          - "pipeline" → for aggregations, joins, counts, grouping, sorting, or complex queries
+      3. Relationships (ALL string-based):
+        - students.class_id → classes._id
+        - classes.teacher_id → teachers._id
+        - attendance.student_id → students._id
+        - submissions.assignment_id → assignments._id
 
-          3. Use MongoDB aggregation ($lookup) when joining collections:
-          - students ↔ classes (class_id)
-          - classes ↔ teachers (teacher_id)
-          - attendance ↔ students (student_id)
-          - submissions ↔ assignments (assignment_id)
-          - submissions ↔ students (student_id)
+      4. Use $lookup ONLY when needed.
 
-          4. Date handling:
-          - "today" → use:
+      5. NEVER use ObjectId or $toObjectId (INVALID).
+
+      6. If filtering by class name (e.g., "Class 6"):
+        MUST use $lookup with classes and match on class.class_name.
+
+      7. If multiple collections involved → ALWAYS use pipeline.
+
+      8. Date handling:
+        "today":
+        {
+          "$gte": ISODate("<TODAY_START>"),
+          "$lt": ISODate("<TODAY_END>")
+        }
+
+      ---
+
+      ### ❌ WRONG:
+      {
+        "collection": "students",
+        "query": { "class_id": "some_id" }
+      }
+
+      ---
+
+      ### ✅ CORRECT:
+      {
+        "collection": "students",
+        "pipeline": [
           {
-            "$gte": ISODate("<TODAY_START>"),
-            "$lt": ISODate("<TODAY_END>")
-          }
-          - Always use ISODate for dates
-
-          5. Common query patterns:
-          - Count → $count
-          - Group → $group
-          - Sort → $sort
-          - Limit → $limit
-          - Projection → $project
-
-          6. Always use correct schema fields (NO hallucination)
-
-          ---
-
-          ### 🚨 CRITICAL RULE (MANDATORY):
-
-          If the user mentions class using human-readable terms like:
-          - "Class 6"
-          - "Class 10 A"
-          - "Grade 5"
-
-          You MUST NOT use class_id directly.
-
-          You MUST:
-          1. Use $lookup with "classes"
-          2. Match using class.class_name
-
-          Any response using class_id directly in this case is INVALID.
-
-          ---
-
-          ### ❌ WRONG:
-          User: "List students in Class 6"
+            "$lookup": {
+              "from": "classes",
+              "localField": "class_id",
+              "foreignField": "_id",
+              "as": "class"
+            }
+          },
+          { "$unwind": "$class" },
           {
-            "collection": "students",
-            "query": { "class_id": "6" }
+            "$match": {
+              "class.class_name": "Class 6"
+            }
           }
+        ]
+      }
 
-          (This is wrong because class_id is not known from user input)
+      ---
 
-          ---
+      ### OUTPUT FORMAT:
+      {
+        "collection": "<name>",
+        "query": {...} OR "pipeline": [...],
+        "explanation": "<short explanation>"
+      }
 
-          ### ✅ CORRECT:
-          {
-            "collection": "students",
-            "pipeline": [
-              {
-                "$lookup": {
-                  "from": "classes",
-                  "localField": "class_id",
-                  "foreignField": "_id",
-                  "as": "class"
-                }
-              },
-              { "$unwind": "$class" },
-              {
-                "$match": {
-                  "class.class_name": "Class 6"
-                }
-              }
-            ]
-          }
+      ---
 
-          ---
+      ### User Question:
+      """
 
-          ### 📌 Examples:
-
-          1. "List all students in Class 6"
-          {
-            "collection": "students",
-            "pipeline": [
-              {
-                "$lookup": {
-                  "from": "classes",
-                  "localField": "class_id",
-                  "foreignField": "_id",
-                  "as": "class"
-                }
-              },
-              { "$unwind": "$class" },
-              {
-                "$match": {
-                  "class.class_name": "Class 6"
-                }
-              }
-            ],
-            "explanation": "Join students with classes and filter by class name"
-          }
-
-          2. "Count absent students today"
-          {
-            "collection": "attendance",
-            "pipeline": [
-              {
-                "$match": {
-                  "status": "Absent",
-                  "date": {
-                    "$gte": ISODate("<TODAY_START>"),
-                    "$lt": ISODate("<TODAY_END>")
-                  }
-                }
-              },
-              {
-                "$count": "total_absent"
-              }
-            ],
-            "explanation": "Count absent students for today"
-          }
-
-          3. "List assignments given by a teacher"
-          {
-            "collection": "assignments",
-            "query": {
-              "teacher_id": "<teacher_id>"
-            },
-            "explanation": "Find assignments by teacher_id"
-          }
-          If joining on ObjectId fields, ensure type conversion using $toObjectId when needed.
-          ---
-
-          ### ⚡ User Question:
-          """
-
-      # Combine safely (no JSON issues)
-      prompt = (
+      return (
           self.schema_description
           + "\n\n"
           + base_prompt
           + user_question
           + "\n\nReturn ONLY JSON."
       )
-
-      return prompt
     
     def _parse_response(self, content: str) -> Dict[str, Any]:
         try:

@@ -232,6 +232,9 @@ Server runs on `http://localhost:8000`
 
 #### Example API Requests
 
+<img width="877" height="639" alt="image" src="https://github.com/user-attachments/assets/2a51e4c5-c9a6-464d-b935-f3240afb5740" />
+
+
 **Single Query:**
 
 ```bash

@@ -21,11 +21,11 @@ class PyObjectId(ObjectId):
 
 # ==================== Student Models ====================
 class Student(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     name: str
     email: str
     phone: str
-    class_id: str
+    class_id: str = Field(alias="_id")
     section: str  # A, B, C etc
     roll_number: int
     enrollment_date: datetime
@@ -47,7 +47,7 @@ class StudentResponse(BaseModel):
 
 # ==================== Teacher Models ====================
 class Teacher(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     name: str
     email: str
     phone: str
@@ -72,7 +72,7 @@ class TeacherResponse(BaseModel):
 
 # ==================== Class Models ====================
 class Class(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     class_name: str
     section: str
     teacher_id: str
@@ -86,7 +86,7 @@ class Class(BaseModel):
 
 # ==================== Attendance Models ====================
 class Attendance(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     student_id: str
     class_id: str
     date: datetime
@@ -105,7 +105,7 @@ class AttendanceResponse(BaseModel):
 
 # ==================== Assignment Models ====================
 class Assignment(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     title: str
     description: str
     class_id: str
@@ -131,7 +131,7 @@ class AssignmentResponse(BaseModel):
 
 # ==================== Submission Models ====================
 class AssignmentSubmission(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     assignment_id: str
     student_id: str
     submission_date: datetime
@@ -144,7 +144,7 @@ class AssignmentSubmission(BaseModel):
 
 # ==================== Exam Models ====================
 class Exam(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     exam_name: str
     class_id: str
     date: datetime

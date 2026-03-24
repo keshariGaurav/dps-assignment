@@ -86,22 +86,35 @@ dps-assignment/
 └── README.md               # This file
 ```
 
-## 📦 Installation & Setup
+## 📦 Installation & Setup (uv Version)
 
 ### Prerequisites
 
-- Python 3.8+
-- MongoDB (local or cloud)
-- LLM API Key (OpenAI, Gemini, or Claude)
+* Python 3.8+
+* MongoDB (local or cloud)
+* LLM API Key (OpenAI, Gemini, or Claude)
+* `uv` installed (https://astral.sh/uv)
 
-### Step 1: Clone & Install Dependencies
+---
+
+## Step 1: Clone & Setup Project
 
 ```bash
 cd /Users/gauravkeshari/Developer/dps-assignment
-pip install -r requirements.txt
+
+# Initialize uv (only first time)
+uv init
+
+# Install dependencies from requirements.txt
+uv add -r requirements.txt
+
+# Sync environment
+uv sync
 ```
 
-### Step 2: Configure Environment
+---
+
+## Step 2: Configure Environment
 
 ```bash
 cp .env.example .env
@@ -126,7 +139,9 @@ API_PORT=8000
 DEBUG=False
 ```
 
-### Step 3: Start MongoDB
+---
+
+## Step 3: Start MongoDB
 
 ```bash
 # If using local MongoDB
@@ -136,10 +151,12 @@ mongod
 # Update MONGODB_URL in .env
 ```
 
-### Step 4: Seed Database with Sample Data
+---
+
+## Step 4: Seed Database with Sample Data
 
 ```bash
-python seed_database.py
+uv run python seed_database.py
 ```
 
 Expected output:
@@ -158,15 +175,56 @@ Exams: 20
 ======================================================
 ```
 
-## 🚀 Usage
+---
 
-### Option 1: REST API (Recommended for Production)
+# 🚀 Usage
+
+## Option 1: REST API (Recommended for Production)
 
 Start the API server:
 
 ```bash
-python main.py
+uv run python main.py
 ```
+
+Server runs on `http://localhost:8000`
+
+**Interactive API Documentation**: Visit `http://localhost:8000/docs`
+
+---
+
+## 🔄 Useful uv Commands
+
+```bash
+# Sync dependencies
+uv sync
+
+# Add new dependency
+uv add fastapi
+
+# Add dev dependency
+uv add pytest --dev
+
+# Remove dependency
+uv remove fastapi
+
+# Run scripts
+uv run python main.py
+uv run python cli.py
+```
+
+---
+
+## ✅ Notes
+
+* Do NOT use `pip install` anymore
+* Always use `uv add` or `uv sync`
+* Commit:
+
+  * `pyproject.toml`
+  * `uv.lock`
+* Do NOT commit `.venv`
+
 
 Server runs on `http://localhost:8000`
 

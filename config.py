@@ -20,5 +20,8 @@ class Settings:
     
     # Debug Mode
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    
+    # ENV
+    ENV: str = os.getenv("ENV")
 
 settings = Settings()

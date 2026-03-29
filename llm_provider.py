@@ -95,21 +95,31 @@ class OpenAIProvider(LLMProvider):
         self.api_key = settings.OPENAI_API_KEY
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not set")
+        env = settings.ENV
         from openai import OpenAI
-        self.client = OpenAI(api_key=self.api_key)
+        if env == "prod":
+            self.client = OpenAI(api_key=self.api_key)
+            self.MODEL = "gpt-4.1"
+        else:
+          
+            self.client = OpenAI(
+                base_url="http://localhost:11434/v1",
+                api_key="ollama"
+            )
+            self.MODEL = "llama3.2:latest"
     
     def generate_query(self, user_question: str) -> Dict[str, Any]:
         """Generate MongoDB query using OpenAI"""
         prompt = self._build_prompt(user_question)
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4.1",
+                model=self.MODEL,
                 messages=[
                     {"role": "system", "content": "You are a MongoDB query expert. Convert natural language to MongoDB queries."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0,
-                max_tokens=1000
+                max_tokens=1000,
             )
             
             content = response.choices[0].message.content

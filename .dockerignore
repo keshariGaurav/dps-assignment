@@ -1,0 +1,41 @@
+# 🔐 Secrets
+.env
+.env.*
+
+# 🧠 Git
+.git
+.gitignore
+
+# 🐍 Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# 🧪 Testing
+.pytest_cache/
+.coverage
+
+# 🐳 Docker
+Dockerfile
+docker-compose.yml
+
+# 📦 Build artifacts
+dist/
+build/
+
+# 🧾 Logs
+*.log
+
+# 🧠 IDE
+.vscode/
+.idea/
+
+# 🧪 Misc
+tmp/
+
+venv/
+
+*.md
+

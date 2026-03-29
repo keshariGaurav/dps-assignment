@@ -22,10 +22,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Optional: MongoDB Express UI for database management
   mongo-express:
     image: mongo-express:latest
-    container_name: mongo-express
+    container_name: mongo_express
     restart: always
     ports:
       - "8081:8081"
@@ -36,7 +35,41 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: password
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    networks:
+      - erp_network
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main
+    container_name: litellm
+    restart: always
+    ports:
+      - "4000:4000"
+    volumes:
+      - ${PWD}/config.yaml:/app/config.yaml
+    entrypoint: []
+    command: ["litellm", "--config", "/app/config.yaml", "--port", "4000"]
+    env_file:
+      - .env
+    environment:
+      - LITELLM_LOG=DEBUG
+    networks:
+      - erp_network
+
+  app:
+    build: .
+    container_name: erp_app
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+    env_file:
+      - .env
     networks:
       - erp_network
 

@@ -1,0 +1,63 @@
+model_list:
+  # 🔹 OpenAI (primary)
+  - model_name: gpt-primary
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # 🔹 Together AI (fallback cloud)
+  - model_name: llama-cloud
+    litellm_params:
+      model: together_ai/meta-llama/Llama-3.1-8B-Instruct
+      api_key: os.environ/TOGETHERAI_API_KEY
+
+  # 🔹 Local Ollama (last fallback)
+  - model_name: llama-local
+    litellm_params:
+      model: ollama/llama3.2:latest
+      api_base: http://localhost:11434
+
+# 🔥 Router settings (core brain)
+router_settings:
+  # ✅ Fallback chain
+  fallback_models:
+    - gpt-primary
+    - llama-cloud
+    - llama-local
+
+  # ✅ Load balancing strategy
+  routing_strategy: simple-shuffle # or round-robin
+
+  # ✅ Retry logic
+  num_retries: 2
+  timeout: 30
+
+  # ✅ Cooldown for failed models
+  cooldown_time: 60
+
+# # 🔥 Rate limiting (per model)
+# rate_limit_settings:
+#   gpt-primary:
+#     rpm: 60 # requests per minute
+#     tpm: 90000 # tokens per minute
+
+#   llama-cloud:
+#     rpm: 100
+
+#   llama-local:
+#     rpm: 1000
+
+# 🔥 Budget / cost control (optional but powerful)
+budget_settings:
+  max_budget: 10 # dollars per day
+  budget_duration: daily
+
+# 🔥 Logging (important for debugging)
+litellm_settings:
+  set_verbose: true
+  success_callback: ["stdout"]
+  failure_callback: ["stdout"]
+
+# # 🔥 General settings
+# general_settings:
+#   master_key: "my-secret-key"   # optional auth for proxy

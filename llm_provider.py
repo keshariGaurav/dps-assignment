@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from config import settings
 import logging
+from litellm import completion
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -96,22 +97,28 @@ class OpenAIProvider(LLMProvider):
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not set")
         env = settings.ENV
+        print("env", env)
         from openai import OpenAI
+        base_url = settings.LITELLM_BASE_URL
+        logger.debug("base url")
+        logger.debug(base_url)
+
+        self.client = OpenAI(
+            base_url=f"{base_url}/v1",
+            api_key="anything"
+        )
+
         if env == "prod":
-            self.client = OpenAI(api_key=self.api_key)
-            self.MODEL = "gpt-4.1"
+            self.MODEL = "gpt-primary"
         else:
-          
-            self.client = OpenAI(
-                base_url="http://localhost:11434/v1",
-                api_key="ollama"
-            )
-            self.MODEL = "llama3.2:latest"
+            print("entered here")
+            self.MODEL = "llama-local"
     
     def generate_query(self, user_question: str) -> Dict[str, Any]:
         """Generate MongoDB query using OpenAI"""
-        prompt = self._build_prompt(user_question)
         try:
+            prompt = self._build_prompt(user_question)
+          
             response = self.client.chat.completions.create(
                 model=self.MODEL,
                 messages=[
@@ -123,8 +130,10 @@ class OpenAIProvider(LLMProvider):
             )
             
             content = response.choices[0].message.content
+            print("(((*****)))", content)
             return self._parse_response(content)
         except Exception as e:
+            print("error from model", e)
             return {"error": str(e), "query": {}}
     
     def _build_prompt(self, user_question: str) -> str:

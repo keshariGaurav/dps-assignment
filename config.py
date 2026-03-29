@@ -13,6 +13,7 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY", "")
+    LITELLM_BASE_URL: str = os.getenv("LITELLM_BASE_URL", "")
     
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")

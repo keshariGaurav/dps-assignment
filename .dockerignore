@@ -35,7 +35,7 @@ build/
 # 🧪 Misc
 tmp/
 
-venv/
+.venv/
 
 *.md
 

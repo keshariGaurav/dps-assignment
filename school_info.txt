@@ -1,0 +1,48 @@
+Modern School Information (Dummy Data)
+
+School Name: Green Valley International School
+Location: Sector 45, Noida, Uttar Pradesh, India
+Established: 2012
+
+Overview:
+Green Valley International School is a modern CBSE-affiliated institution focused on holistic development, innovation, and global learning standards.
+
+Infrastructure:
+- Smart classrooms with digital boards
+- Science and computer laboratories
+- Library with 10,000+ books
+- Sports complex (cricket ground, basketball court, swimming pool)
+- Auditorium with 500 seating capacity
+
+Academics:
+- Curriculum: CBSE
+- Grades: Nursery to Class XII
+- Streams: Science, Commerce, Humanities
+- Special programs: Robotics, AI basics, Coding for kids
+
+Faculty:
+- 80+ qualified teachers
+- Regular training and workshops
+- Student-teacher ratio: 25:1
+
+Facilities:
+- School transport with GPS tracking
+- Cafeteria with hygienic food
+- Medical room with nurse
+- Counseling and career guidance
+
+Extracurricular Activities:
+- Music, Dance, Drama
+- Art and Craft
+- Debate and Quiz clubs
+- Annual sports meet and cultural fest
+
+Achievements:
+- 100% board result in last 5 years
+- National level winners in Olympiads
+- Inter-school sports champions
+
+Contact:
+Phone: +91-9876543210
+Email: info@greenvalleyschool.edu.in
+Website: www.greenvalleyschool.edu.in

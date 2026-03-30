@@ -3,7 +3,12 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from config import settings
 import logging
-from litellm import completion
+import json
+from typing import Dict, Any
+from openai import OpenAI
+
+from tools import read_school_information  
+from tools_schema import tools_schema
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -86,22 +91,23 @@ class LLMProvider(ABC):
         """
     
     @abstractmethod
-    def generate_query(self, user_question: str) -> Dict[str, Any]:
+    def general_query(self, user_question: str) -> Dict[str, Any]:
         """Generate MongoDB query from natural language"""
         pass
+
+# ✅ make sure this exists
+
 
 class OpenAIProvider(LLMProvider):
     def __init__(self):
         super().__init__()
+
         self.api_key = settings.OPENAI_API_KEY
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not set")
-        env = settings.ENV
-        print("env", env)
-        from openai import OpenAI
+
         base_url = settings.LITELLM_BASE_URL
-        logger.debug("base url")
-        logger.debug(base_url)
+        env = settings.ENV
 
         self.client = OpenAI(
             base_url=f"{base_url}/v1",
@@ -113,16 +119,25 @@ class OpenAIProvider(LLMProvider):
         else:
             print("entered here")
             self.MODEL = "llama-local"
-    
-    def generate_query(self, user_question: str) -> Dict[str, Any]:
-        """Generate MongoDB query using OpenAI"""
+
+    # 🔹 Generic chat (used by agent)
+    def chat(self, messages, tools=None):
+        return self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto" if tools else None
+        )
+          
+          
+    def general_query(self, user_question: str) -> Dict[str, Any]:
         try:
             prompt = self._build_prompt(user_question)
           
             response = self.client.chat.completions.create(
                 model=self.MODEL,
                 messages=[
-                    {"role": "system", "content": "You are a MongoDB query expert. Convert natural language to MongoDB queries."},
+                    {"role": "system", "content": "Use content to answer general query."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0,
@@ -130,12 +145,11 @@ class OpenAIProvider(LLMProvider):
             )
             
             content = response.choices[0].message.content
-            print("(((*****)))", content)
             return self._parse_response(content)
         except Exception as e:
-            print("error from model", e)
             return {"error": str(e), "query": {}}
-    
+
+
     def _build_prompt(self, user_question: str) -> str:
       base_prompt = """
       You are an expert MongoDB query generator.

@@ -90,6 +90,31 @@ async def process_query(
                 "question": request.query
             }
         )
+        
+@app.post("/agent-query", response_model=dict)
+async def agent_query(
+    request: QueryRequest,
+    agent: QueryAgent = Depends(get_query_agent)
+):
+    try:
+        print("Processing agent-based query")
+
+        # ✅ Call agent (NOT llm_provider)
+        result = agent.process_question(request.query)
+
+        return result
+
+    except Exception as e:
+        logger.exception(f"Agent error: {str(e)}")
+
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": str(e),
+                "query": request.query
+            }
+        )
 
 # ==================== Batch Query Endpoint ====================
 @app.post("/batch-query")

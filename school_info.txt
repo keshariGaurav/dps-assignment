@@ -1,4 +1,4 @@
-Modern School Information (Dummy Data)
+Modern School Information
 
 School Name: Green Valley International School
 Location: Sector 45, Noida, Uttar Pradesh, India

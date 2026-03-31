@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 
 from llm_provider import LLMFactory
 from query_executor import MongoQueryExecutor, QueryValidator, ResponseFormatter
-from tools import read_school_information
+from tools import read_school_information, read_principle_information
 from tools_schema import tools_schema
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,8 @@ class QueryAgent:
 
         # 🔹 Tool execution map
         self.tool_map = {
-            "read_school_information": read_school_information
+            "read_school_information": read_school_information,
+            "read_principle_information": read_principle_information
         }
 
     # ===============================
@@ -103,10 +104,13 @@ class QueryAgent:
 
         return res.choices[0].message.content.strip().upper()
 
-    # ===============================
-    # 🧰 TOOL FLOW
-    # ===============================
     def handle_tool_flow(self, user_query: str) -> Dict[str, Any]:
+        SYSTEM_PROMPT = """
+        You are a helpful assistant.
+
+        If tools are needed, call them.
+        """
+
         POST_TOOL_PROMPT = """
         You are a helpful assistant.
 
@@ -118,47 +122,58 @@ class QueryAgent:
 
         If data is empty, say "No data found".
         """
-        messages = [ {"role": "system", "content": POST_TOOL_PROMPT},
-                    {"role": "user", "content": user_query}]
 
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_query}
+        ]
+
+        # 🔹 First call (may return tool_calls)
         response = self.llm.chat(messages, tools=self.tools)
         message = response.choices[0].message
+        logger.debug("DEBUG: ", message)
 
+        # ✅ If no tool needed
         if not message.tool_calls:
-            return {"success": True, "response_text": message.content}
+            return {
+                "success": True,
+                "response_text": message.content
+            }
 
+        # ✅ Step 1: append assistant message ONCE
+        messages.append(message)
+        
+
+        # ✅ Step 2: execute ALL tools
         for tool_call in message.tool_calls:
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments or "{}")
 
-            result = self.tool_map[name](**args)
+            try:
+                result = self.tool_map[name](**args)
+            except Exception as e:
+                result = {"error": str(e)}
 
-            messages.append(message)
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
                 "content": json.dumps(result)
             })
-            logger.debug("Messages", messages)
-        POST_TOOL_PROMPT = """
-        Summarize the tool results clearly.
-        Do not mention tools.
-        Keep response concise and user-friendly.
-        """
+
+        # ✅ Step 3: second LLM call (final answer)
         final_messages = [
             {"role": "system", "content": POST_TOOL_PROMPT},
             *messages
         ]
 
         final = self.llm.chat(final_messages)
-        
-
 
         return {
             "success": True,
             "response_text": final.choices[0].message.content
         }
-
+        
+        
     # ===============================
     # 🗄 DATABASE FLOW
     # ===============================
